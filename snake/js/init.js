@@ -23,7 +23,9 @@ window.onload = function() {
 			"bottom":[],
 			"left":[],
 			"right":[]
-		}; 
+		},
+		score = 0;
+
 	canvas.width = width*0.95;
 	canvas.height = height*0.95;	
 	var menuWidth = canvas.width*0.2,
@@ -59,6 +61,20 @@ window.onload = function() {
 		ctx.restore();
 	}
 
+	function drawScore() {
+		ctx.save();
+		ctx.beginPath();
+		ctx.font = "40px Verdana";
+		ctx.textAlign = "center";
+		ctx.textBaseline = "top";
+		ctx.shadowColor = borderColor;
+		ctx.fillStyle = borderColor;
+		ctx.fillText(score, menuWidth/2, 100);
+		ctx.fill();
+		ctx.closePath();
+		ctx.restore();
+	}
+
 	function createRoad() {
 		ctx.save();
 		ctx.beginPath();
@@ -69,6 +85,7 @@ window.onload = function() {
 		for (var i = 1; i < roadNumRow; i++) {
 			ctx.moveTo(totalX, row*i);
 			ctx.lineTo(width, row*i);
+
 		}
 		
 		// 列
@@ -76,7 +93,7 @@ window.onload = function() {
 			var x = totalX+col*i;
 			ctx.moveTo(x, 0);
 			ctx.lineTo(x, gameHeight);
-			ctx.stroke();
+			
 		}
 		ctx.stroke();
 		ctx.closePath();
@@ -122,7 +139,7 @@ window.onload = function() {
 
 		return t[random(0, t.length-1)];
 	}
-	randomFood();
+	
 	function createFood() {
 		var pos = {
 			startX: menuWidth,
@@ -169,12 +186,7 @@ window.onload = function() {
 				var pos, color;
 				if (i == 0) {
 					color = "red";
-					if (foodAllPos[snakes[0]+postion[direction]] === undefined) {
-						alert("撞墙了");
-						return false;
-					}
 					snakes[i] += postion[direction];
-					
 					pos = foodAllPos[snakes[i]];
 				} else {
 					color = "#ccc";
@@ -187,41 +199,49 @@ window.onload = function() {
 				ctx.closePath();
 			}
 
+
+			// 检查是否被自己咬到
+			if (snakes.indexOf(snakes[0], 1) !== -1) {
+				alert("咬到自己了");
+			}
 			// 蛇头吃到食物了
 			if (snakes[0] == foodPos) {
 				snakes.length++;
+				score += 10;
 				foodStatus = false;
 			}	
+			snakeIsMove = false;
 		}
 	}
 
 
 	function handleEvent() {
-		document.addEventListener('keydown', function(e) { move(e.keyCode); }, false);	
-		// window.onresize = function() {
-		// 	width = document.documentElement.clientWidth,
-		// 	height = document.documentElement.clientHeight,
-		// 	canvas.width = width*0.95;
-		// 	canvas.height = height*0.95;	
-		// 	menuWidth = canvas.width*0.2,
-		// 		gameWidth = canvas.width*0.8,
-		// 		menuHeight = canvas.height,
-		// 		gameHeight = canvas.height,
-		// 		row = gameHeight / roadNumRow,
-		// 		col = gameWidth / roadNumCol;
-		// 	createMenuPanel();
-		// 	drawText();
-		// 	handleEvent();
-		// 	savePos();
-		// 	initGamePanel();
-		// 	snakes.forEach(createSnake);
-		// }		
+		document.addEventListener('keydown', setDirection, false);	
 	}
 
+	function setDirection(e) {
+		log(direction, e.keyCode);
+		if (direction == 39 && e.keyCode == 37) {
+			return false; 
+		}
+		if (direction == 38 && e.keyCode == 40) {
+			return false; 
+		}
+		if (direction == 40 && e.keyCode == 38) {
+			return false; 
+		}
+		if (direction == 37 && e.keyCode == 39) {
+			return false; 
+		}
+		log("执行了");
+		direction = e.keyCode; 
+		move(direction); 
+	}
+
+	var snakeIsMove = false;
 	function move(keyCode) {
-		direction = keyCode;
 		var head = snakes[0];
-		log(head);
+		snakeIsMove = true;
 		switch (keyCode) {
 			case 38: // 上
 				if (borderWall['top'].indexOf(head) !== -1) {
@@ -245,7 +265,6 @@ window.onload = function() {
 				initGamePanel();
 				break;
 			case 39: // 右
-				log(borderWall['right'][head])
 				if (borderWall['right'].indexOf(head) !== -1) {
 					alert("撞墙了");
 					return false;
@@ -256,23 +275,27 @@ window.onload = function() {
 	}
 
 	function initGamePanel() {
-		ctx.clearRect(menuWidth, 0, canvas.width, gameHeight);
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		createRoad();
 		createFood();
 		snakeMove();
+		createMenuPanel();
+		drawText();
+		drawScore();
 	}
-
-	createMenuPanel();
-	drawText();
+	randomFood();
+	
+	
 	handleEvent();
 	savePos();
 	initGamePanel();
 	snakes.forEach(createSnake);
 	
 	
-	// setInterval(function() {
-	// 	testNum++;
-	// 	createSnake(testNum);
-	// }, 1000);
+
+
+	setInterval(function() {
+		(direction && !snakeIsMove) && move(direction);
+	}, 100);
 	
 }
